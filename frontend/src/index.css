@@ -1,0 +1,476 @@
+/* ============================================================
+   Design tokens
+   ============================================================ */
+:root {
+  --bg: #0f1117;
+  --bg-card: #1a1d27;
+  --bg-sidebar: #12151f;
+  --border: #2a2d3e;
+  --text: #e2e8f0;
+  --text-muted: #8892a4;
+  --accent: #6c63ff;
+  --accent-hover: #5a52d5;
+
+  /* Event type colors */
+  --c-thinking: #8892a4;
+  --c-tool: #60a5fa;
+  --c-result: #4ade80;
+  --c-error: #f87171;
+  --c-done: #a78bfa;
+
+  /* Badge colors */
+  --badge-high: #166534;
+  --badge-high-text: #86efac;
+  --badge-medium: #854d0e;
+  --badge-medium-text: #fde68a;
+  --badge-low: #7f1d1d;
+  --badge-low-text: #fca5a5;
+
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================
+   Reset & base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 15px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   App shell
+   ============================================================ */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.app-header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header-logo { font-size: 1.75rem; }
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.header-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Main ── */
+.app-main {
+  flex: 1;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* ============================================================
+   Search Bar
+   ============================================================ */
+.search-section { margin-bottom: 2rem; }
+
+.search-bar {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.search-input {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.25);
+}
+
+.search-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.search-input::placeholder { color: var(--text-muted); }
+
+.search-button {
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: background 0.15s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+}
+
+.search-button:hover:not(:disabled) { background: var(--accent-hover); }
+.search-button:active:not(:disabled) { transform: scale(0.97); }
+.search-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Loading spinner inside button */
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.status-text {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.status-error { color: var(--c-error); }
+
+/* ============================================================
+   Content Layout (sidebar + report)
+   ============================================================ */
+.content-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .content-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   Agent Log Sidebar
+   ============================================================ */
+.agent-log {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 160px);
+  position: sticky;
+  top: 80px;
+}
+
+.log-header {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.log-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+  scroll-behavior: smooth;
+}
+
+.log-body::-webkit-scrollbar { width: 4px; }
+.log-body::-webkit-scrollbar-track { background: transparent; }
+.log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.log-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.25rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.log-label {
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.log-message { color: var(--text); }
+
+/* Per-type styles */
+.log-thinking {
+  background: rgba(136, 146, 164, 0.08);
+  color: var(--c-thinking);
+  font-style: italic;
+}
+.log-thinking .log-label { color: var(--c-thinking); }
+
+.log-tool-call {
+  background: rgba(96, 165, 250, 0.1);
+  font-family: var(--font-mono);
+}
+.log-tool-call .log-label { color: var(--c-tool); }
+.log-tool-call .log-message { color: var(--c-tool); }
+
+.log-result {
+  background: rgba(74, 222, 128, 0.08);
+}
+.log-result .log-label { color: var(--c-result); }
+.log-result .log-message { color: var(--c-result); }
+
+.log-error {
+  background: rgba(248, 113, 113, 0.1);
+}
+.log-error .log-label { color: var(--c-error); }
+.log-error .log-message { color: var(--c-error); }
+
+.log-done, .log-report {
+  background: rgba(167, 139, 250, 0.1);
+}
+.log-done .log-label, .log-report .log-label { color: var(--c-done); }
+
+/* ============================================================
+   Report Area
+   ============================================================ */
+.report-area {
+  min-height: 400px;
+}
+
+.report-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  color: var(--text-muted);
+  gap: 0.75rem;
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.placeholder-icon { font-size: 3rem; }
+
+/* ============================================================
+   Research Report
+   ============================================================ */
+.research-report {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+}
+
+.report-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+}
+
+.report-body { color: var(--text); }
+
+/* Markdown typography */
+.report-body h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 1.5rem 0 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.report-body h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1rem 0 0.4rem;
+}
+
+.report-body p {
+  margin-bottom: 0.75rem;
+  line-height: 1.75;
+}
+
+.report-body ul, .report-body ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.report-body li {
+  margin-bottom: 0.35rem;
+  line-height: 1.7;
+}
+
+.report-body a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.report-body a:hover { text-decoration: underline; }
+
+.report-body code {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 0.1em 0.4em;
+}
+
+.report-body pre {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.report-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.88rem;
+}
+
+.report-body blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 0.75rem 0;
+  padding: 0.5rem 1rem;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   Confidence badges
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  padding: 0.15em 0.4em;
+  margin: 0 0.25em;
+  vertical-align: middle;
+  cursor: default;
+  user-select: none;
+}
+
+.badge-high {
+  background: var(--badge-high);
+  color: var(--badge-high-text);
+}
+
+.badge-medium {
+  background: var(--badge-medium);
+  color: var(--badge-medium-text);
+}
+
+.badge-low {
+  background: var(--badge-low);
+  color: var(--badge-low-text);
+}
+
+/* ============================================================
+   Empty state
+   ============================================================ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+  color: var(--text-muted);
+}
+
+.empty-icon { font-size: 4rem; }
+
+.empty-state h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.empty-state p {
+  max-width: 480px;
+  line-height: 1.7;
+}
+
+.example-questions {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  max-width: 520px;
+}
+
+.example-questions li {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: default;
+  text-align: left;
+}
