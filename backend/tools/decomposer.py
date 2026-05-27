@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import json
-import os
 from typing import List
 
-from langchain_groq import ChatGroq
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 
 
@@ -28,15 +27,7 @@ def decompose_query(question: str) -> List[str]:
     Raises:
         ValueError: If the LLM response cannot be parsed or doesn't yield 3 questions.
     """
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise EnvironmentError("GROQ_API_KEY environment variable is not set.")
-
-    llm = ChatGroq(
-        model="llama-3.1-70b-versatile",
-        temperature=0.3,
-        groq_api_key=api_key,
-    )
+    llm = ChatOllama(model="llama3.2", temperature=0.3)
 
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),

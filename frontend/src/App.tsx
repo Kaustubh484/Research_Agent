@@ -7,7 +7,7 @@
  *   - Two-column body (agent log sidebar + report content area)
  */
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import AgentLog from "./components/AgentLog";
 import ResearchReport from "./components/ResearchReport";
 import SearchBar from "./components/SearchBar";
@@ -23,15 +23,19 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>("idle");
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [report, setReport] = useState<string>("");
-  const wsRef = useRef<ResearchWebSocket | null>(null);
+  // Holds the question that triggers the WebSocket effect.
+  // Changing this value is the only way to start a new connection.
+  const [activeQuestion, setActiveQuestion] = useState<string | null>(null);
+  // Stable ref so the effect's callbacks always see current state setters
+  // without needing them as effect dependencies.
+  const appStateRef = useRef(appState);
+  appStateRef.current = appState;
 
-  const handleSearch = useCallback((question: string) => {
-    // Cancel any ongoing session
-    wsRef.current?.stop();
-
-    setEvents([]);
-    setReport("");
-    setAppState("running");
+  // One WebSocket per activeQuestion. useEffect cleanup stops the previous
+  // socket before opening a new one, so StrictMode double-invocation and
+  // rapid re-searches never produce more than one live connection.
+  useEffect(() => {
+    if (!activeQuestion) return;
 
     const ws = new ResearchWebSocket({
       onEvent(event: AgentEvent) {
@@ -53,6 +57,8 @@ export default function App() {
         }
       },
       onClose() {
+        // Only flip to "done" if we're still actively running (not already
+        // transitioned to "done" or "error" via an explicit event).
         setAppState((prev) => (prev === "running" ? "done" : prev));
       },
       onError() {
@@ -64,12 +70,31 @@ export default function App() {
       },
     });
 
-    wsRef.current = ws;
-    ws.start(question);
+    ws.start(activeQuestion);
+
+    // Cleanup: called by React before re-running the effect or on unmount.
+    return () => {
+      ws.stop();
+    };
+  }, [activeQuestion]);
+
+  const handleSearch = useCallback((question: string) => {
+    // Reset UI state before the effect fires the new connection.
+    setEvents([]);
+    setReport("");
+    setAppState("running");
+    // Setting a new question value triggers the effect above.
+    // If the user submits the same question twice, append a timestamp so
+    // the effect dependency actually changes and re-runs.
+    setActiveQuestion((prev) =>
+      prev === question ? `${question} ` : question
+    );
   }, []);
 
   const isLoading = appState === "running";
-  const showLog = events.length > 0;
+  // Show the two-column layout as soon as a search is in progress or complete,
+  // even before the first event arrives so the log panel is immediately visible.
+  const showLog = appState !== "idle";
   const showReport = Boolean(report);
 
   return (

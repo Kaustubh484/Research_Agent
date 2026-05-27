@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import os
 from typing import List
 
-from langchain_groq import ChatGroq
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.models.schemas import Chunk
@@ -42,7 +41,7 @@ def _build_context(chunks: List[Chunk]) -> str:
 
 
 def synthesize_report(chunks: List[Chunk], question: str) -> str:
-    """Use Groq to synthesize a structured, cited research report.
+    """Use Ollama to synthesize a structured, cited research report.
 
     Args:
         chunks: Retrieved and ranked text chunks with source metadata.
@@ -51,19 +50,8 @@ def synthesize_report(chunks: List[Chunk], question: str) -> str:
     Returns:
         A markdown-formatted research report string.
 
-    Raises:
-        EnvironmentError: If GROQ_API_KEY is not set.
     """
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise EnvironmentError("GROQ_API_KEY environment variable is not set.")
-
-    llm = ChatGroq(
-        model="llama-3.1-70b-versatile",
-        temperature=0.2,
-        max_tokens=4096,
-        groq_api_key=api_key,
-    )
+    llm = ChatOllama(model="llama3.2", temperature=0.3)
 
     context = _build_context(chunks)
     user_message = (

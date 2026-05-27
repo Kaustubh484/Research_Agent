@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import os
 from typing import List
 
-from langchain_groq import ChatGroq
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.models.schemas import Chunk
@@ -44,19 +43,8 @@ def verify_facts(report: str, chunks: List[Chunk]) -> str:
         The annotated report with [HIGH], [MEDIUM], or [LOW] labels appended
         after each cited claim.
 
-    Raises:
-        EnvironmentError: If GROQ_API_KEY is not set.
     """
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise EnvironmentError("GROQ_API_KEY environment variable is not set.")
-
-    llm = ChatGroq(
-        model="llama-3.1-70b-versatile",
-        temperature=0.1,
-        max_tokens=4096,
-        groq_api_key=api_key,
-    )
+    llm = ChatOllama(model="llama3.2", temperature=0.3)
 
     source_context = _build_source_context(chunks)
     user_message = (

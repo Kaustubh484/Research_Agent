@@ -19,9 +19,9 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     """Startup/shutdown lifecycle hook."""
     # Validate critical environment variables at startup
-    if not os.getenv("GROQ_API_KEY"):
+    if not os.getenv("GEMINI_API_KEY"):
         raise RuntimeError(
-            "GROQ_API_KEY is not set. Copy backend/.env.example to backend/.env and fill in your key."
+            "GEMINI_API_KEY is not set. Copy backend/.env.example to backend/.env and fill in your key."
         )
     yield
 
@@ -45,7 +45,7 @@ app.add_middleware(
 @app.get("/health", tags=["Health"])
 async def health_check() -> dict:
     """Lightweight liveness probe."""
-    return {"status": "ok", "groq_configured": bool(os.getenv("GROQ_API_KEY"))}
+    return {"status": "ok", "gemini_configured": bool(os.getenv("GEMINI_API_KEY"))}
 
 
 @app.websocket("/ws/research")
