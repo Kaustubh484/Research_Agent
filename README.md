@@ -1,3 +1,8 @@
+
+
+
+
+
 # Nexus
 
 Agentic RAG pipeline for real-time academic research synthesis
@@ -11,9 +16,7 @@ Agentic RAG pipeline for real-time academic research synthesis
 
 ## Demo
 
-![Demo](assets/demo.gif)
-
-The demo shows a full research query running end-to-end: sub-question generation, ArXiv retrieval, chunk ranking, report synthesis, and fact verification, each step appearing in the agent log as it completes.
+https://github.com/user-attachments/assets/f39870f4-ce26-456e-a30a-b0ff3f5d1662
 
 ---
 
@@ -67,42 +70,6 @@ Verified Report with Citations
 | Frontend | React 18 + TypeScript + Vite |
 | Real-time | Native WebSocket + `asyncio.to_thread` |
 | Data source | ArXiv API (`arxiv` SDK) + ar5iv.org HTML (`beautifulsoup4`) |
-
----
-
-## Project structure
-
-```
-nexus/
-├── backend/
-│   ├── agent/
-│   │   └── researcher.py        # Async pipeline loop; emits typed WebSocket events per step
-│   ├── models/
-│   │   └── schemas.py           # Pydantic v2 schemas for all I/O and event types
-│   ├── tools/
-│   │   ├── decomposer.py        # LLM decomposes question into 3 ArXiv sub-queries
-│   │   ├── arxiv_search.py      # ArXiv SDK search returning top-5 Paper objects
-│   │   ├── retriever.py         # ar5iv fetch, 500-token chunking, FAISS retrieval
-│   │   ├── synthesizer.py       # LLM synthesizes 6-section cited markdown report
-│   │   └── verifier.py          # LLM annotates each claim with HIGH/MEDIUM/LOW label
-│   ├── main.py                  # FastAPI app: /health GET, /ws/research WebSocket
-│   └── requirements.txt
-├── frontend/
-│   └── src/
-│       ├── components/
-│       │   ├── SearchBar.tsx        # Research question input, disabled while running
-│       │   ├── AgentLog.tsx         # Auto-scrolling real-time event sidebar
-│       │   └── ResearchReport.tsx   # Markdown renderer with confidence badge chips
-│       ├── services/
-│       │   └── websocket.ts         # ResearchWebSocket class with reconnect logic
-│       └── App.tsx                  # State machine and useEffect WebSocket lifecycle
-├── tests/
-│   ├── test_arxiv.py
-│   ├── test_chunker.py
-│   ├── test_decomposer.py
-│   └── test_verifier.py
-└── README.md
-```
 
 ---
 
