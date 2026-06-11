@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import traceback
 from typing import Any, Callable, Coroutine, List
@@ -50,7 +51,7 @@ async def run_research_agent(question: str, send: SendFn) -> None:
         await _emit(send, EventType.TOOL_CALL,
                     "decompose_query", {"question": question})
 
-        sub_questions: List[str] = decompose_query(question)
+        sub_questions: List[str] = await asyncio.to_thread(decompose_query, question)
 
         await _emit(send, EventType.RESULT,
                     f"Generated {len(sub_questions)} sub-questions",
@@ -69,7 +70,7 @@ async def run_research_agent(question: str, send: SendFn) -> None:
             await _emit(send, EventType.TOOL_CALL,
                         "search_arxiv", {"sub_question": sq})
 
-            papers = search_arxiv(sq)
+            papers = await asyncio.to_thread(search_arxiv, sq)
 
             # Deduplicate by arxiv_id across sub-question searches
             new_papers = [p for p in papers if p.arxiv_id not in seen_ids]
@@ -94,7 +95,7 @@ async def run_research_agent(question: str, send: SendFn) -> None:
                     "retrieve_chunks",
                     {"num_papers": len(all_papers), "question": question})
 
-        chunks: List[Chunk] = retrieve_chunks(all_papers, question)
+        chunks: List[Chunk] = await asyncio.to_thread(retrieve_chunks, all_papers, question)
 
         chunk_previews = [
             {"source": c.source_title, "preview": c.text[:120] + "..."}
@@ -114,7 +115,7 @@ async def run_research_agent(question: str, send: SendFn) -> None:
                     "synthesize_report",
                     {"num_chunks": len(chunks), "question": question})
 
-        report: str = synthesize_report(chunks, question)
+        report: str = await asyncio.to_thread(synthesize_report, chunks, question)
 
         await _emit(send, EventType.RESULT,
                     "Report synthesized successfully",
@@ -130,7 +131,7 @@ async def run_research_agent(question: str, send: SendFn) -> None:
                     "verify_facts",
                     {"report_length": len(report), "num_chunks": len(chunks)})
 
-        verified_report: str = verify_facts(report, chunks)
+        verified_report: str = await asyncio.to_thread(verify_facts, report, chunks)
 
         await _emit(send, EventType.RESULT,
                     "Fact verification complete",

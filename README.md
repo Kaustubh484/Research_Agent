@@ -1,201 +1,102 @@
-# Research Assistant
+# Nexus
 
-An AI-powered research pipeline that searches ArXiv, retrieves relevant paper sections,
-synthesizes a structured report, and verifies every claim — all streamed live to a React
-frontend over WebSocket.
+Agentic RAG pipeline for real-time academic research synthesis
 
----
-
-## Architecture
-
-```
-┌────────────────────────────────────────────┐
-│  Browser (React + Vite + TypeScript)       │
-│  SearchBar → AgentLog ← ResearchReport     │
-│              ↕ WebSocket                   │
-├────────────────────────────────────────────┤
-│  FastAPI Backend (Python)                  │
-│  /ws/research  /health                     │
-│                                            │
-│  Agent Pipeline (LangChain + Groq)         │
-│  1. decompose_query   → 3 sub-questions    │
-│  2. search_arxiv      → top 5 papers each │
-│  3. retrieve_chunks   → FAISS + embeddings │
-│  4. synthesize_report → markdown report    │
-│  5. verify_facts      → confidence labels  │
-└────────────────────────────────────────────┘
-```
+![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)
+![LangChain](https://img.shields.io/badge/LangChain-0.3-1C3C3C.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ---
 
-## Prerequisites
+## Demo
 
-| Tool    | Version  |
-|---------|----------|
-| Python  | ≥ 3.10   |
-| Node.js | ≥ 18     |
-| npm     | ≥ 9      |
+![Demo](assets/demo.gif)
 
-You also need a **Groq API key** — get one free at <https://console.groq.com>.
+The demo shows a full research query running end-to-end: sub-question generation, ArXiv retrieval, chunk ranking, report synthesis, and fact verification, each step appearing in the agent log as it completes.
 
 ---
 
-## Setup
+## How it works
 
-### 1. Clone / enter the project
-
-```bash
-cd research-assistant
 ```
-
-### 2. Backend setup
-
-```bash
-cd backend
-
-# Create and activate a virtual environment
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-# Edit .env and set GROQ_API_KEY=<your key>
-```
-
-### 3. Frontend setup
-
-```bash
-cd ../frontend
-
-npm install
-
-# Optional: copy env (default WS URL is ws://localhost:8000)
-cp .env.example .env
+User Question
+    |
+    v
+Query Decomposer        (LLM rewrites question into 3 orthogonal ArXiv queries)
+    |
+    v
+ArXiv Search (x3)       (fetches top-5 papers per sub-question, deduplicates by ID)
+    |
+    v
+RAG Retriever (FAISS)   (chunks paper text, embeds with MiniLM, ranks by cosine similarity)
+    |
+    v
+Report Synthesizer      (LLM writes 6-section markdown report with inline citations)
+    |
+    v
+Fact Verifier           (LLM cross-checks each cited claim against source chunks)
+    |
+    v
+Verified Report with Citations
 ```
 
 ---
 
-## Running Locally
+## Features
 
-Open **two terminals**:
-
-**Terminal 1 — Backend**
-
-```bash
-cd backend
-source .venv/bin/activate
-uvicorn backend.main:app --reload --port 8000
-```
-
-**Terminal 2 — Frontend**
-
-```bash
-cd frontend
-npm run dev
-```
-
-Then open <http://localhost:5173> in your browser.
-
-### Health check
-
-```bash
-curl http://localhost:8000/health
-# {"status":"ok","groq_configured":true}
-```
+- LLM-driven query decomposition into 3 focused sub-questions
+- ArXiv paper retrieval with deduplication across sub-questions
+- FAISS semantic search over chunked paper content
+- Structured report synthesis with citations
+- Per-claim confidence verification (HIGH/MEDIUM/LOW)
+- Real-time agent reasoning streamed via WebSockets
+- Local LLM inference via Ollama (zero API cost)
 
 ---
 
-## How It Works
+## Tech stack
 
-1. You type a research question and click **Research**.
-2. The frontend opens a WebSocket to `ws://localhost:8000/ws/research` and sends
-   `{"question": "..."}`.
-3. The backend agent runs five tools in sequence, streaming JSON events after
-   each step:
-
-| Event type  | Meaning                                    |
-|-------------|--------------------------------------------|
-| `thinking`  | Agent is reasoning (shown in gray italic)  |
-| `tool_call` | A tool is being invoked (blue monospace)   |
-| `result`    | A tool returned data (green)               |
-| `report`    | Final report is ready                      |
-| `error`     | Something went wrong (red)                 |
-| `done`      | Pipeline complete                          |
-
-4. When the `report` event arrives, the React app renders the markdown report
-   with inline confidence badges (**HIGH** / **MED** / **LOW**).
+| Layer | Technology |
+|---|---|
+| LLM | Ollama + `llama3.2` (local) |
+| Embeddings | `sentence-transformers` / `all-MiniLM-L6-v2` |
+| Vector store | `faiss-cpu` / `IndexFlatIP` (in-memory, cosine similarity) |
+| Agent framework | LangChain + `langchain-ollama` + `langchain-core` |
+| Backend | FastAPI + Uvicorn (async WebSocket) |
+| Frontend | React 18 + TypeScript + Vite |
+| Real-time | Native WebSocket + `asyncio.to_thread` |
+| Data source | ArXiv API (`arxiv` SDK) + ar5iv.org HTML (`beautifulsoup4`) |
 
 ---
 
-## Running Tests
-
-```bash
-cd backend
-source .venv/bin/activate
-
-# Run all unit tests (no API key required — LLM calls are mocked)
-pytest tests/ -v
-
-# Run only fast unit tests, skipping integration
-pytest tests/ -v -m "not integration"
-
-# Run integration tests (real Groq API calls — requires valid GROQ_API_KEY)
-pytest tests/ -v -m integration
-```
-
-### Test coverage
-
-| File                      | What it tests                                      |
-|---------------------------|----------------------------------------------------|
-| `tests/test_arxiv.py`     | ArXiv paper search — shape, fields, deduplication  |
-| `tests/test_chunker.py`   | Text tokenization and overlapping chunk windows    |
-| `tests/test_decomposer.py`| Query decomposition — mock + real API              |
-| `tests/test_verifier.py`  | Fact verification — mock + real API                |
-
----
-
-## Project Structure
+## Project structure
 
 ```
-research-assistant/
+nexus/
 ├── backend/
 │   ├── agent/
-│   │   ├── __init__.py
-│   │   └── researcher.py        # Agent loop + event streaming
+│   │   └── researcher.py        # Async pipeline loop; emits typed WebSocket events per step
 │   ├── models/
-│   │   ├── __init__.py
-│   │   └── schemas.py           # Pydantic schemas for all I/O
+│   │   └── schemas.py           # Pydantic v2 schemas for all I/O and event types
 │   ├── tools/
-│   │   ├── __init__.py
-│   │   ├── decomposer.py        # Tool 1: query decomposition
-│   │   ├── arxiv_search.py      # Tool 2: ArXiv search
-│   │   ├── retriever.py         # Tool 3: FAISS chunk retrieval
-│   │   ├── synthesizer.py       # Tool 4: report synthesis
-│   │   └── verifier.py          # Tool 5: fact verification
-│   ├── main.py                  # FastAPI app entry point
-│   ├── requirements.txt
-│   └── .env.example
+│   │   ├── decomposer.py        # LLM decomposes question into 3 ArXiv sub-queries
+│   │   ├── arxiv_search.py      # ArXiv SDK search returning top-5 Paper objects
+│   │   ├── retriever.py         # ar5iv fetch, 500-token chunking, FAISS retrieval
+│   │   ├── synthesizer.py       # LLM synthesizes 6-section cited markdown report
+│   │   └── verifier.py          # LLM annotates each claim with HIGH/MEDIUM/LOW label
+│   ├── main.py                  # FastAPI app: /health GET, /ws/research WebSocket
+│   └── requirements.txt
 ├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── SearchBar.tsx
-│   │   │   ├── AgentLog.tsx
-│   │   │   └── ResearchReport.tsx
-│   │   ├── services/
-│   │   │   └── websocket.ts
-│   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   └── index.css
-│   ├── index.html
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   └── .env.example
+│   └── src/
+│       ├── components/
+│       │   ├── SearchBar.tsx        # Research question input, disabled while running
+│       │   ├── AgentLog.tsx         # Auto-scrolling real-time event sidebar
+│       │   └── ResearchReport.tsx   # Markdown renderer with confidence badge chips
+│       ├── services/
+│       │   └── websocket.ts         # ResearchWebSocket class with reconnect logic
+│       └── App.tsx                  # State machine and useEffect WebSocket lifecycle
 ├── tests/
-│   ├── conftest.py
 │   ├── test_arxiv.py
 │   ├── test_chunker.py
 │   ├── test_decomposer.py
@@ -205,27 +106,80 @@ research-assistant/
 
 ---
 
-## Environment Variables
+## Quick start
 
-### Backend (`backend/.env`)
+### Prerequisites
 
-| Variable       | Required | Description                    |
-|----------------|----------|--------------------------------|
-| `GROQ_API_KEY` | Yes      | API key from console.groq.com  |
+- Python 3.11+
+- Node.js 18+
+- [Ollama](https://ollama.com) installed and running (`ollama serve`)
 
-### Frontend (`frontend/.env`)
+### 1. Clone the repo
 
-| Variable       | Default                   | Description                      |
-|----------------|---------------------------|----------------------------------|
-| `VITE_WS_URL`  | `ws://localhost:8000`     | WebSocket base URL for backend   |
+```bash
+git clone <repo-url>
+cd nexus
+```
+
+### 2. Backend setup
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+No `.env` file is required. Ollama runs locally with no API key.
+
+### 3. Pull Ollama models
+
+```bash
+ollama pull llama3.2
+```
+
+### 4. Frontend setup
+
+```bash
+cd frontend
+npm install
+```
+
+### 5. Run the backend
+
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn backend.main:app --reload --port 8000
+```
+
+### 6. Run the frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open **http://localhost:5173**.
 
 ---
 
-## Notes
+## Architecture decisions
 
-- The FAISS index is built **in-memory per request** — no persistence required.
-- ar5iv.org fetches are best-effort; the tool falls back to the abstract if the
-  HTML fetch fails or times out.
-- The Groq model used is `llama-3.1-70b-versatile`. Swap via environment variable
-  or edit the model name in each tool file if needed.
-- Integration tests call the real Groq API and will consume quota.
+**Query decomposition.** A single broad question like "How does RLHF improve LLM alignment?" maps to multiple distinct sub-topics: reward modeling, preference data collection, and policy optimization. A single ArXiv query for the full question tends to return papers that touch all three areas superficially. Decomposing into three orthogonal sub-queries and merging results by `arxiv_id` gives broader topical coverage with fewer redundant documents, and provides the retriever with a richer candidate pool to rank against the original question.
+
+**In-memory FAISS vs. persistent vector store.** Each research session assembles a new document set from scratch, typically 5-15 papers producing a few hundred chunks. There is no index to reuse across sessions, no multi-user concurrency requirement, and no dataset large enough to warrant disk-backed storage. A persistent store like Chroma or Pinecone would add serialization overhead and operational complexity for no practical gain. An in-memory `IndexFlatIP` index builds in under a second and is garbage-collected when the request completes.
+
+**WebSockets vs. polling.** The pipeline takes 30-90 seconds with irregular bursts of activity: LLM calls finish unpredictably, ArXiv latency varies, and ar5iv fetches may time out. Polling at any reasonable interval would either miss events or generate wasteful round-trips. Server-Sent Events (SSE) would handle server-to-client streaming but are unidirectional, and the client needs to send the research question on connect. WebSockets cover both directions cleanly, and `asyncio.to_thread` ensures the event loop stays free to flush each send frame before the next blocking tool call begins.
+
+**Local Ollama vs. cloud API.** Running inference locally via Ollama eliminates per-token API cost, removes the need for API key management, and avoids sending potentially sensitive research queries to a third-party service. For a pipeline that makes three to five LLM calls per query, cloud API costs accumulate quickly during development and testing. The tradeoff is inference speed: `llama3.2` on consumer hardware is slower than a hosted API, but for a research tool where the bottleneck is usually ArXiv network latency and HTML parsing, the difference is acceptable.
+
+---
+
+## Engineering highlights
+
+- Built agentic RAG pipeline with LangChain + FAISS that decomposes research questions into 3 focused sub-questions via LLM-driven query decomposition and retrieves relevant ArXiv paper chunks via semantic similarity search
+
+- Synthesized structured research reports with cited findings and per-claim confidence verification (HIGH/MEDIUM/LOW) across 15 retrieved paper chunks per query
+
+- Streamed real-time agent reasoning to React/TypeScript frontend via FastAPI WebSockets, visualizing each pipeline step as it runs

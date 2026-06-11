@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 /**
  * WebSocket service that manages the connection lifecycle with the research backend.
  * Connects, sends the research question, dispatches incoming events to handlers,
@@ -69,6 +71,9 @@ export class ResearchWebSocket {
     this.ws.onmessage = (event: MessageEvent) => {
       try {
         const parsed: AgentEvent = JSON.parse(event.data as string);
+        if (parsed.type === "done" || parsed.type === "error") {
+          this.closed = true;
+        }
         this.callbacks.onEvent(parsed);
       } catch {
         // Malformed message from server — surface as an error event

@@ -3,7 +3,7 @@
  * Disabled while the agent is running to prevent concurrent requests.
  */
 
-import React, { FormEvent, useState } from "react";
+import { FormEvent, useState } from "react";
 
 interface SearchBarProps {
   onSearch: (question: string) => void;

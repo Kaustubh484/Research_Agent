@@ -4,7 +4,7 @@
  * Each event type has distinct visual styling.
  */
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { AgentEvent } from "../services/websocket";
 
 interface AgentLogProps {
@@ -50,7 +50,7 @@ export default function AgentLog({ events }: AgentLogProps) {
             key={idx}
             className={`log-entry ${EVENT_CLASS[event.type] ?? ""}`}
           >
-            <span className="log-label">[{EVENT_LABEL[event.type] ?? event.type}]</span>
+            <span className="log-label">{EVENT_LABEL[event.type] ?? event.type}</span>
             <span className="log-message">{event.message}</span>
           </div>
         ))}

@@ -7,7 +7,7 @@
  *   - Two-column body (agent log sidebar + report content area)
  */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AgentLog from "./components/AgentLog";
 import ResearchReport from "./components/ResearchReport";
 import SearchBar from "./components/SearchBar";
